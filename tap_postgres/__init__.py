@@ -64,7 +64,6 @@ def schema_for_column_datatype(c):
     schema = {}
     #remove any array notation from type information as we use a separate field for that
     data_type = c.sql_data_type.lower().replace('[]', '')
-    LOGGER.info("datatype: " + data_type)
 
     if data_type in INTEGER_TYPES:
         schema['type'] = nullable_column('integer', c.is_primary_key)
@@ -156,7 +155,6 @@ def schema_for_column_datatype(c):
         schema['type'] = nullable_column('string', c.is_primary_key)
         return schema
 
-    LOGGER.info("default schema: " + str(schema))
     return schema
 
 def schema_name_for_numeric_array(precision, scale):
