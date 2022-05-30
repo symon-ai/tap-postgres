@@ -87,6 +87,8 @@ def filter_dbs_sql_clause(sql, filter_dbs):
 
 def selected_value_to_singer_value_impl(elem, sql_datatype):
     sql_datatype = sql_datatype.replace('[]', '')
+    LOGGER.info("trying tomarshall value of class( {} ) and sql_datatype ( {} )".format(
+            elem.__class__, sql_datatype))
     if elem is None:
         cleaned_elem = elem
     elif sql_datatype == 'money':
