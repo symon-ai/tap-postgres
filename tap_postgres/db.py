@@ -128,6 +128,8 @@ def selected_value_to_singer_value_impl(elem, sql_datatype):
         else:
             raise Exception(
                 "do not know how to marshall a dict if its not an hstore or json: {}".format(sql_datatype))
+    elif sql_datatype in {'interval', 'numrange'}: # point type is read as a string already
+        cleaned_elem = str(elem)
     else:
         raise Exception("do not know how to marshall value of class( {} ) and sql_datatype ( {} )".format(
             elem.__class__, sql_datatype))
