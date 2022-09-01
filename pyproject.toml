@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "tap-postgres"
+version = "1.0.1"
+description = "Singer.io tap for extracting data from PostgreSQL"
+authors = ["Stitch"]
+classifiers=['Programming Language :: Python :: 3 :: Only']
+
+[tool.poetry.dependencies]
+python = "^3.7"
+singer-python = "5.3.1"
+psycopg2-binary = "2.9.3"
+strict-rfc3339 = "0.7"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+tap-postgres = "tap_postgres:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
