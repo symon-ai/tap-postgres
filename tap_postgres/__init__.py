@@ -154,7 +154,9 @@ def schema_for_column_datatype(c):
     if data_type in {'interval', 'numrange', 'point'}:
         schema['type'] = nullable_column('string', c.is_primary_key)
         return schema
-
+    
+    schema['inclusion'] = 'unsupported'
+    schema['description'] = 'Unsupported column type'
     return schema
 
 def schema_name_for_numeric_array(precision, scale):
@@ -222,6 +224,8 @@ def schema_for_column(c):
     elif c.sql_data_type == 'bytea[]':
         # bytea[] are unsupported
         del column_schema['type']
+        column_schema['inclusion'] = 'unsupported'
+        column_schema['description'] = 'Unsupported column type'
     else:
         #custom datatypes like enums
         column_schema['items'] = {'$ref': '#/definitions/sdc_recursive_string_array'}
