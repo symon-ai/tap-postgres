@@ -4,6 +4,7 @@ import math
 import psycopg2
 import psycopg2.extras
 import singer
+from tap_postgres.symon_exception import SymonException
 LOGGER = singer.get_logger()
 
 cursor_iter_size = 20000
@@ -67,7 +68,18 @@ def open_connection(conn_config, logical_replication=False):
     if logical_replication:
         cfg['connection_factory'] = psycopg2.extras.LogicalReplicationConnection
 
-    conn = psycopg2.connect(**cfg)
+    try:
+        conn = psycopg2.connect(**cfg)
+    except psycopg2.OperationalError as e:
+        if 'password authentication failed for user' in str(e):
+            raise SymonException('The username and password provided are incorrect. Please try again.', 'odbc.AuthenticationFailed')
+        if f'database "{conn_config["dbname"]}" does not exist' in str(e):
+            raise SymonException(f'The database "{conn_config["dbname"]}" does not exist. Please ensure it is correct.', 'odbc.DatabaseDoesNotExist')
+        if f'could not translate host name "{conn_config["host"]}" to address' in str(e):
+            raise SymonException(f'The host "{conn_config["host"]}" was not found. Please check the host name and try again.', 'odbc.HostNotFound')
+        if f'timeout expired' in str(e):
+            raise SymonException('Timed out connecting to database. Please ensure all the form values are correct.', 'odbc.ConnectionTimeout')
+        raise
 
     return conn
 
