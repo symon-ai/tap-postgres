@@ -444,7 +444,7 @@ def do_discovery(conn_config):
 
 
     if len(all_streams) == 0:
-        raise RuntimeError('0 tables were discovered across the entire cluster')
+        raise SymonException(f'Sorry, we couldn\'t find any table in the database "{conn_config["filter_dbs"]}". Please check and try again.', 'odbc.TableNotFound')
 
     dump_catalog(all_streams)
     return all_streams

@@ -71,13 +71,14 @@ def open_connection(conn_config, logical_replication=False):
     try:
         conn = psycopg2.connect(**cfg)
     except psycopg2.OperationalError as e:
-        if 'password authentication failed for user' in str(e):
+        message = str(e)
+        if 'password authentication failed for user' in message:
             raise SymonException('The username and password provided are incorrect. Please try again.', 'odbc.AuthenticationFailed')
-        if f'database "{conn_config["dbname"]}" does not exist' in str(e):
+        if f'database "{conn_config["dbname"]}" does not exist' in message:
             raise SymonException(f'The database "{conn_config["dbname"]}" does not exist. Please ensure it is correct.', 'odbc.DatabaseDoesNotExist')
-        if f'could not translate host name "{conn_config["host"]}" to address' in str(e):
+        if f'could not translate host name "{conn_config["host"]}" to address' in message:
             raise SymonException(f'The host "{conn_config["host"]}" was not found. Please check the host name and try again.', 'odbc.HostNotFound')
-        if f'timeout expired' in str(e):
+        if f'timeout expired' in message:
             raise SymonException('Timed out connecting to database. Please ensure all the form values are correct.', 'odbc.ConnectionTimeout')
         raise
 
