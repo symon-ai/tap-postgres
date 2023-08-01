@@ -79,9 +79,9 @@ def open_connection(conn_config, logical_replication=False):
         if f'could not translate host name "{conn_config["host"]}" to address' in message:
             raise SymonException(f'The host "{conn_config["host"]}" was not found. Please check the host name and try again.', 'odbc.HostNotFound')
         if 'Is the server running on that host and accepting TCP/IP connections?' in message:
-            raise SymonException(f'Sorry, we couldn\'t connect to the host "{conn_config["host"]}". Please ensure all the form values are correct.', 'odbc.ConnectionFailed')
+            raise SymonException(f'Sorry, we couldn\'t connect to the host "{conn_config["host"]}". Please ensure all the connection form values are correct.', 'odbc.ConnectionFailed')
         if f'timeout expired' in message:
-            raise SymonException('Timed out connecting to database. Please ensure all the form values are correct.', 'odbc.ConnectionTimeout')
+            raise SymonException('Timed out connecting to database. Please ensure all the connection form values are correct.', 'odbc.ConnectionTimeout')
         raise
 
     return conn
