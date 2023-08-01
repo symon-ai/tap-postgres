@@ -4,6 +4,7 @@
 import datetime
 import pdb
 import json
+import traceback
 import os
 import sys
 import time
@@ -25,6 +26,7 @@ import tap_postgres.sync_strategies.full_table as full_table
 import tap_postgres.sync_strategies.incremental as incremental
 import tap_postgres.db as post_db
 import tap_postgres.sync_strategies.common as sync_common
+from tap_postgres.symon_exception import SymonException
 LOGGER = singer.get_logger()
 
 #LogMiner do not support LONG, LONG RAW, CLOB, BLOB, NCLOB, ADT, or COLLECTION datatypes.
@@ -442,7 +444,7 @@ def do_discovery(conn_config):
 
 
     if len(all_streams) == 0:
-        raise RuntimeError('0 tables were discovered across the entire cluster')
+        raise SymonException(f'Sorry, we couldn\'t find any table in the database "{conn_config["filter_dbs"]}". Please check and try again.', 'odbc.TableNotFound')
 
     dump_catalog(all_streams)
     return all_streams
@@ -683,33 +685,66 @@ def do_sync(conn_config, catalog, default_replication_method, state):
     return state
 
 def main_impl():
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    conn_config = {'host'     : args.config['host'],
-                   'user'     : args.config['user'],
-                   'password' : args.config['password'],
-                   'port'     : args.config['port'],
-                   'dbname'   : args.config['dbname'],
-                   'filter_dbs' : args.config.get('filter_dbs'),
-                   'debug_lsn' : args.config.get('debug_lsn') == 'true',
-                   'logical_poll_total_seconds': float(args.config.get('logical_poll_total_seconds', 0)),
-                   'wal2json_message_format': args.config.get('wal2json_message_format')}
+    try:
+        # used for storing error info to write if error occurs
+        error_info = None
+        args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+        conn_config = {'host'     : args.config['host'],
+                    'user'     : args.config['user'],
+                    'password' : args.config['password'],
+                    'port'     : args.config['port'],
+                    'dbname'   : args.config['dbname'],
+                    'filter_dbs' : args.config.get('filter_dbs'),
+                    'debug_lsn' : args.config.get('debug_lsn') == 'true',
+                    'logical_poll_total_seconds': float(args.config.get('logical_poll_total_seconds', 0)),
+                    'wal2json_message_format': args.config.get('wal2json_message_format')}
 
-    if args.config.get('ssl') == 'true':
-        conn_config['sslmode'] = 'require'
+        if args.config.get('ssl') == 'true':
+            conn_config['sslmode'] = 'require'
 
-    post_db.cursor_iter_size = int(args.config.get('itersize', '20000'))
+        post_db.cursor_iter_size = int(args.config.get('itersize', '20000'))
 
-    post_db.include_schemas_in_destination_stream_name = (args.config.get('include_schemas_in_destination_stream_name') == 'true')
+        post_db.include_schemas_in_destination_stream_name = (args.config.get('include_schemas_in_destination_stream_name') == 'true')
 
-    post_db.get_ssl_status(conn_config)
+        post_db.get_ssl_status(conn_config)
 
-    if args.discover:
-        do_discovery(conn_config)
-    elif args.properties:
-        state = args.state
-        do_sync(conn_config, args.properties, args.config.get('default_replication_method'), state)
-    else:
-        LOGGER.info("No properties were selected")
+        if args.discover:
+            do_discovery(conn_config)
+        elif args.properties:
+            state = args.state
+            do_sync(conn_config, args.properties, args.config.get('default_replication_method'), state)
+        else:
+            LOGGER.info("No properties were selected")
+    except SymonException as e:
+        error_info = {
+            'message': str(e),
+            'code': e.code,
+            'traceback': traceback.format_exc()
+        }
+
+        if e.details is not None:
+            error_info['details'] = e.details
+        raise
+    except BaseException as e:
+        error_info = {
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }
+        raise
+    finally:
+        if error_info is not None:
+            error_file_path = args.config.get('error_file_path', None)
+            if error_file_path is not None:
+                try:
+                    with open(error_file_path, 'w', encoding='utf-8') as fp:
+                        json.dump(error_info, fp)
+                except:
+                    pass
+            # log error info as well in case file is corrupted
+            error_info_json = json.dumps(error_info)
+            error_start_marker = args.config.get('error_start_marker', '[tap_error_start]')
+            error_end_marker = args.config.get('error_end_marker', '[tap_error_end]')
+            LOGGER.info(f'{error_start_marker}{error_info_json}{error_end_marker}')
 
 def main():
     try:

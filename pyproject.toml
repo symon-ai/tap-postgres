@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tap-postgres"
-version = "1.0.3"
+version = "1.0.4"
 description = "Singer.io tap for extracting data from PostgreSQL"
 authors = ["Stitch"]
 classifiers=['Programming Language :: Python :: 3 :: Only']
