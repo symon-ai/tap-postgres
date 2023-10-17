@@ -73,7 +73,7 @@ def open_connection(conn_config, logical_replication=False):
     except psycopg2.OperationalError as e:
         message = str(e)
         if 'password authentication failed for user' in message:
-            raise SymonException('The username and password provided are incorrect. Please try again.', 'odbc.AuthenticationFailed')
+            raise SymonException('The username or password provided is incorrect. Please check and try again.', 'odbc.AuthenticationFailed')
         if f'database "{conn_config["dbname"]}" does not exist' in message:
             raise SymonException(f'The database "{conn_config["dbname"]}" does not exist. Please ensure it is correct.', 'odbc.DatabaseDoesNotExist')
         if f'could not translate host name "{conn_config["host"]}" to address' in message:
