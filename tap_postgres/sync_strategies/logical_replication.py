@@ -350,7 +350,11 @@ def consume_message_format_1(payload, conn_info, streams_lookup, state, time_ext
 
 
 def consume_message(streams, state, msg, time_extracted, conn_info, end_lsn, message_format="1"):
-    payload = json.loads(msg.payload)
+    # WP-21701 Second order SQL injection with the following line
+    # payload = json.loads(msg.payload)
+    # this change will break log based replication during sync, but we do not use it currently
+    LOGGER.error("Unsupported replication method selected")
+    payload = msg.payload
     lsn = msg.data_start
 
     streams_lookup = {s['tap_stream_id']: s for s in streams}
